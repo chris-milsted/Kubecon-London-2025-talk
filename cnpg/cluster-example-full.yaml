@@ -1,0 +1,43 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cluster-kubecon-london
+spec:
+  description: "Kubecon London Cluster"
+  imageName: registry.hub.docker.com/cmilsted/postgresql:17.2
+  instances: 3
+  startDelay: 300
+  stopDelay: 300
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      dataChecksums: true
+      walSegmentSize: 32
+      postInitSQL:
+        - CREATE DATABASE pgbench OWNER app
+  enableSuperuserAccess: true
+  postgresql:
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: required
+  plugins:
+  - name: barman-cloud.cloudnative-pg.io
+    parameters:
+      barmanObjectName: paris-object
+      encryption: "" 
+  storage:
+    storageClass: linode-block-storage-retain-encrypted
+    size: 10Gi
+  resources:
+    requests:
+      memory: "4Gi"
+      cpu: "2"
+    limits:
+      memory: "6Gi"
+      cpu: "4"
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname

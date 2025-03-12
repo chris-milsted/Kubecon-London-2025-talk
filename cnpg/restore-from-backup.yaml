@@ -1,0 +1,47 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cluster-restore
+spec:
+  description: "Kubecon London restore"
+  imageName: registry.hub.docker.com/cmilsted/postgresql:17.2
+  instances: 3
+  startDelay: 300
+  stopDelay: 300
+  primaryUpdateStrategy: unsupervised
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: cluster-kubecon-london-superuser
+  bootstrap:
+    recovery:
+      source: cluster-kubecon-london
+  externalClusters:
+    - name: cluster-kubecon-london
+      barmanObjectStore:
+        destinationPath: "s3://paris-bucket/"
+        endpointURL: "https://fr-par-1.linodeobjects.com"
+        s3Credentials:
+          accessKeyId:
+            name: backup-creds
+            key: ACCESS_KEY_ID
+          secretAccessKey:
+            name: backup-creds
+            key: ACCESS_SECRET_KEY
+          region:
+            name: backup-creds
+            key: REGION
+        wal:
+          compression: "bzip2"
+  storage:
+    storageClass: linode-block-storage-retain-encrypted
+    size: 10Gi
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "1"
+    limits:
+      memory: "2Gi"
+      cpu: "2"
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
